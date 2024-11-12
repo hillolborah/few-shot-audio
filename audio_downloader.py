@@ -3,6 +3,7 @@ from pydub import AudioSegment
 import os
 import csv
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from yt_dlp.utils import DownloadError  # Import the specific error class
 
 def get_video_id_and_start_time(file_string):
     """Extract YouTube ID and start time from the format like 'zfI3S4Pgqg0_5000'."""
@@ -46,8 +47,12 @@ def extract_audio_segment(video_id, start_time, end_time, output_folder):
 
         # Download the audio
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
-            audio_file = f"{output_folder}/{video_id}.wav"
+            try:
+                ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
+                audio_file = f"{output_folder}/{video_id}.wav"
+            except DownloadError:
+                print(f"Video {video_id} is unavailable. Skipping.")
+                return
 
         # Load the audio file and trim it using Pydub
         audio = AudioSegment.from_wav(audio_file)
@@ -63,7 +68,7 @@ def extract_audio_segment(video_id, start_time, end_time, output_folder):
         print(f"Error processing video {video_id}: {str(e)}")
 
 def process_single_entry(csv_file):
-    """Process one CSV entry."""
+    """Process all entries in a CSV file."""
     try:
         csv_folder = os.path.dirname(csv_file)
 
@@ -71,9 +76,8 @@ def process_single_entry(csv_file):
             reader = csv.DictReader(file)
             print("CSV Headers:", reader.fieldnames)
 
-            # Process only the first row in the CSV for testing
-            row = next(reader, None)  # Fetch the first row
-            if row:
+            # Iterate through all rows in the CSV
+            for row in reader:
                 file_string = row[' segment_id'].strip()  # Extract the string like 'zfI3S4Pgqg0_5000'
                 video_id, start_time = get_video_id_and_start_time(file_string)
                 if video_id is not None and start_time is not None:
@@ -83,7 +87,7 @@ def process_single_entry(csv_file):
                     except ValueError:
                         print(f"Skipping video {video_id}: Invalid end time.")
             else:
-                print("No data found in the CSV file.")
+                print(f"Finished processing {csv_file}")
     except Exception as e:
         print(f"Error processing CSV file {csv_file}: {str(e)}")
 
