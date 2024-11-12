@@ -58,7 +58,7 @@ def extract_audio_segment(video_id, start_time, end_time, output_folder):
         # Export the trimmed audio back to the same file or a new file
         trimmed_audio.export(audio_file, format="wav")
         print(f"Trimmed audio saved as: {audio_file}")
-    except yt_dlp.utils.DownloadError as e:
+    except Exception as e:
         print(f"Error processing video {video_id}: {str(e)}")
 
 def process_single_entry(csv_file):
