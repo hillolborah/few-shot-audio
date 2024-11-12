@@ -60,6 +60,7 @@ def extract_audio_segment(video_id, start_time, end_time, output_folder):
         print(f"Trimmed audio saved as: {audio_file}")
     except Exception as e:
         print(f"Error processing video {video_id}: {str(e)}")
+        continue
 
 def process_single_entry(csv_file):
     """Process one CSV entry."""
@@ -109,6 +110,7 @@ def process_folders_in_parallel(folders, num_cores=70):
                 future.result()  # Will raise an exception if processing failed
             except Exception as e:
                 print(f"Error during processing: {e}")
+                continue
 
 def main():
     # Define the main folders containing subfolders with CSV files
