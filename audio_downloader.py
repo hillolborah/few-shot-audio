@@ -93,7 +93,7 @@ def process_csv_files_in_folder(folder):
                 csv_files.append(csv_file)
     return csv_files
 
-def process_folders_in_parallel(folders, num_cores=60):
+def process_folders_in_parallel(folders, num_cores=70):
     """Process the folders in parallel using multiple cores."""
     with ProcessPoolExecutor(max_workers=num_cores) as executor:
         futures = []
