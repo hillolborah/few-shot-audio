@@ -20,30 +20,31 @@ def count_files_in_directory(directory):
 
 def extract_audio_segment(video_id, start_time, end_time, output_folder):
     """Download and trim the audio segment."""
-    # Check if the total number of files in the output folder is less than 1004
-    if count_files_in_directory(output_folder) >= 1004:
-        print(f"Total number of files in {output_folder} has reached or exceeded 1004. Skipping video {video_id}.")
-        return
-    audio_file = f"{output_folder}/{video_id}.wav" 
-    if os.path.exists(audio_file):
-        print(f"{video_id}.wav Already Exists")
-        return
-    # yt-dlp options to download the best audio
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'extractaudio': True,
-        'audioformat': 'wav',
-        'outtmpl': f'{output_folder}/{video_id}.%(ext)s',  # Save in the CSV folder
-        'ffmpeg_location': 'C:/ffmpeg',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'wav',
-            'preferredquality': '192',
-        }],
-    }
-
-    # Download the audio
     try:
+        # Check if the total number of files in the output folder is less than 1004
+        if count_files_in_directory(output_folder) >= 1004:
+            print(f"Total number of files in {output_folder} has reached or exceeded 1004. Skipping video {video_id}.")
+            return
+        audio_file = f"{output_folder}/{video_id}.wav" 
+        if os.path.exists(audio_file):
+            print(f"{video_id}.wav Already Exists")
+            return
+        
+        # yt-dlp options to download the best audio
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'extractaudio': True,
+            'audioformat': 'wav',
+            'outtmpl': f'{output_folder}/{video_id}.%(ext)s',  # Save in the CSV folder
+            'ffmpeg_location': 'C:/ffmpeg',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'wav',
+                'preferredquality': '192',
+            }],
+        }
+
+        # Download the audio
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
             audio_file = f"{output_folder}/{video_id}.wav"
@@ -60,29 +61,31 @@ def extract_audio_segment(video_id, start_time, end_time, output_folder):
         print(f"Trimmed audio saved as: {audio_file}")
     except Exception as e:
         print(f"Error processing video {video_id}: {str(e)}")
-        continue
 
 def process_single_entry(csv_file):
     """Process one CSV entry."""
-    csv_folder = os.path.dirname(csv_file)
+    try:
+        csv_folder = os.path.dirname(csv_file)
 
-    with open(csv_file, newline='', encoding='utf-8') as file:
-        reader = csv.DictReader(file)
-        print("CSV Headers:", reader.fieldnames)
+        with open(csv_file, newline='', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            print("CSV Headers:", reader.fieldnames)
 
-        # Process only the first row in the CSV for testing
-        row = next(reader, None)  # Fetch the first row
-        if row:
-            file_string = row[' segment_id'].strip()  # Extract the string like 'zfI3S4Pgqg0_5000'
-            video_id, start_time = get_video_id_and_start_time(file_string)
-            if video_id is not None and start_time is not None:
-                try:
-                    end_time = start_time + 10
-                    extract_audio_segment(video_id, start_time, end_time, csv_folder)
-                except ValueError:
-                    print(f"Skipping video {video_id}: Invalid end time.")
-        else:
-            print("No data found in the CSV file.")
+            # Process only the first row in the CSV for testing
+            row = next(reader, None)  # Fetch the first row
+            if row:
+                file_string = row[' segment_id'].strip()  # Extract the string like 'zfI3S4Pgqg0_5000'
+                video_id, start_time = get_video_id_and_start_time(file_string)
+                if video_id is not None and start_time is not None:
+                    try:
+                        end_time = start_time + 10
+                        extract_audio_segment(video_id, start_time, end_time, csv_folder)
+                    except ValueError:
+                        print(f"Skipping video {video_id}: Invalid end time.")
+            else:
+                print("No data found in the CSV file.")
+    except Exception as e:
+        print(f"Error processing CSV file {csv_file}: {str(e)}")
 
 def process_csv_files_in_folder(folder):
     """Iterate through all directories and process CSV files found."""
@@ -110,7 +113,6 @@ def process_folders_in_parallel(folders, num_cores=70):
                 future.result()  # Will raise an exception if processing failed
             except Exception as e:
                 print(f"Error during processing: {e}")
-                continue
 
 def main():
     # Define the main folders containing subfolders with CSV files
