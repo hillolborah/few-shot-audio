@@ -8,7 +8,7 @@ from yt_dlp.utils import DownloadError  # Import the specific error class
 def get_video_id_and_start_time(file_string):
     """Extract YouTube ID and start time from the format like 'zfI3S4Pgqg0_5000'."""
     try:
-        ytid, start_time = file_string.split('_')
+        ytid, start_time = file_string.rsplit('_', 1)
         start_time = int(start_time) / 1000.0  # Convert to seconds (from milliseconds)
         return ytid.strip(), start_time
     except ValueError:
@@ -26,9 +26,9 @@ def extract_audio_segment(video_id, start_time, end_time, output_folder):
         if count_files_in_directory(output_folder) >= 1004:
             print(f"Total number of files in {output_folder} has reached or exceeded 1004. Skipping video {video_id}.")
             return
-        audio_file = f"{output_folder}/{video_id}.wav" 
-        if os.path.exists(audio_file):
-            print(f"{video_id}.wav Already Exists")
+        audio_file = f"{output_folder}/{video_id}" 
+        if os.path.exists(f"{audio_file}.m4a") or os.path.exists(f"{audio_file}.webm"):
+            print(f"{video_id} Already Exists")
             return
         
         # yt-dlp options to download the best audio
@@ -37,7 +37,7 @@ def extract_audio_segment(video_id, start_time, end_time, output_folder):
             'extractaudio': True,
             'audioformat': 'wav',
             'outtmpl': f'{output_folder}/{video_id}.%(ext)s',  # Save in the CSV folder
-            'ffmpeg_location': 'C:/ffmpeg',
+           # 'ffmpeg_location': 'C:/ffmpeg',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'wav',
@@ -101,7 +101,7 @@ def process_csv_files_in_folder(folder):
                 csv_files.append(csv_file)
     return csv_files
 
-def process_folders_in_parallel(folders, num_cores=70):
+def process_folders_in_parallel(folders, num_cores=75):
     """Process the folders in parallel using multiple cores."""
     with ProcessPoolExecutor(max_workers=num_cores) as executor:
         futures = []
